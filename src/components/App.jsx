@@ -1,45 +1,40 @@
 import { Section, Title } from './App.styled';
-import ContactForm from './ContactForm/ContactForm';
-import { Filter } from './Filter/Filter';
 import { ContactList } from './ContactList/ContactList';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  addNewContact,
-  deleteIdContact,
-  filterContact,
-} from 'redux/ContactsSlice';
-import { selectContacts, selectFilter } from 'redux/selectors';
+  selectError,
+  selectFilter,
+  selectLoading,
+  selectVisibleContacts,
+} from 'redux/selectors';
+import { useEffect } from 'react';
+import {
+  addContactsThunk,
+  deleteContactByIdThunk,
+  getContactsThunk,
+} from 'redux/contacts.thunk';
+import Loader from './Loader/Loader';
+import { Filter } from './Filter/Filter';
+import { filterContacts } from 'redux/filterSlice';
+import ContactForm from './ContactForm/ContactForm';
 
 const App = () => {
-  const dispatch = useDispatch();
-
-  const contacts = useSelector(selectContacts);
   const filter = useSelector(selectFilter);
+  const dispatch = useDispatch();
+  const visibleContacts = useSelector(selectVisibleContacts);
+  const isLoading = useSelector(selectLoading);
+  const error = useSelector(selectError);
 
-  const onAddContact = newContact => {
-    if (
-      contacts.find(
-        ({ name }) =>
-          name.toLocaleLowerCase() === newContact.name.toLocaleLowerCase()
-      )
-    ) {
-      window.alert(`${newContact.name} is already in contacts.`);
-      return;
-    }
-    dispatch(addNewContact(newContact));
-  };
+  useEffect(() => {
+    dispatch(getContactsThunk());
+  }, [dispatch]);
 
-  const onDeleateContact = id => {
-    dispatch(deleteIdContact(id));
-  };
+  const onAddContact = newContact => dispatch(addContactsThunk(newContact));
 
-  const getFiltredContacts = () =>
-    contacts.filter(({ name }) =>
-      name.toLocaleLowerCase().includes(filter.toLocaleLowerCase())
-    );
+  const onDeleateContact = id => dispatch(deleteContactByIdThunk(id));
 
   const onChangeFilterValue = event =>
-    dispatch(filterContact(event.currentTarget.value));
+    dispatch(filterContacts(event.target.value));
 
   return (
     <Section>
@@ -48,10 +43,14 @@ const App = () => {
 
       <Title>Contacts</Title>
       <Filter filterValue={filter} onChangeFilterValue={onChangeFilterValue} />
-      <ContactList
-        contacts={getFiltredContacts()}
-        onDeleateContact={onDeleateContact}
-      />
+      {!isLoading && !error && (
+        <ContactList
+          contacts={visibleContacts}
+          onDeleateContact={onDeleateContact}
+        />
+      )}
+      {isLoading && <Loader />}
+      {error && <p>Something went wrong ...</p>}
     </Section>
   );
 };
