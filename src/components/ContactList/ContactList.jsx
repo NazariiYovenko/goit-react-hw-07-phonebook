@@ -4,7 +4,6 @@ import { ContactListWrapper } from './ContactList.styled';
 export const ContactList = ({ contacts, onDeleateContact }) => {
   return (
     <ContactListWrapper>
-      {console.log(contacts)}
       {contacts.length === 0 && 'Nothing Found'}
       {contacts.map(contact => (
         <Contact
